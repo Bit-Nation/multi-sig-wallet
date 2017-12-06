@@ -1,0 +1,19 @@
+{
+  "name": "multi-sig-wallet",
+  "version": "1.0.0",
+  "description": "> Since we couldn't find a minimalistic & maintained and simple eth multi signiture wallet we decided to create our own one.",
+  "main": "main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Bit-Nation/multi-sig-wallet.git"
+  },
+  "author": "Floiran Lenz <florian@bitnation.co>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Bit-Nation/multi-sig-wallet/issues"
+  },
+  "homepage": "https://github.com/Bit-Nation/multi-sig-wallet#readme"
+}
