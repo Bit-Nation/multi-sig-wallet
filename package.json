@@ -4,7 +4,8 @@
   "description": "> Since we couldn't find a minimalistic & maintained and simple eth multi signiture wallet we decided to create our own one.",
   "main": "main.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "node_modules/.bin/electron ."
   },
   "repository": {
     "type": "git",
@@ -17,6 +18,7 @@
   },
   "homepage": "https://github.com/Bit-Nation/multi-sig-wallet#readme",
   "devDependencies": {
-    "electron": "^1.7.9"
+    "electron": "^1.7.9",
+    "electron-reload": "^1.2.2"
   }
 }
