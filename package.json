@@ -15,5 +15,8 @@
   "bugs": {
     "url": "https://github.com/Bit-Nation/multi-sig-wallet/issues"
   },
-  "homepage": "https://github.com/Bit-Nation/multi-sig-wallet#readme"
+  "homepage": "https://github.com/Bit-Nation/multi-sig-wallet#readme",
+  "devDependencies": {
+    "electron": "^1.7.9"
+  }
 }
