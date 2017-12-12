@@ -811,10 +811,6 @@
     "name": "SourceUnit",
     "src": "0:555:0"
   },
-  "compiler": {
-    "name": "solc",
-    "version": "0.4.18+commit.9cf6e910.Emscripten.clang"
-  },
   "networks": {
     "1512744814150": {
       "events": {},
@@ -830,8 +826,13 @@
       "events": {},
       "links": {},
       "address": "0x772ea262cd60520216fc550f0b5e942a8325e188"
+    },
+    "1512764827476": {
+      "events": {},
+      "links": {},
+      "address": "0x14cbd7efabae68018ffb3a59e56256d40a6ab86a"
     }
   },
-  "schemaVersion": "1.0.1",
-  "updatedAt": "2017-12-08T17:19:18.502Z"
+  "schemaVersion": "1.0.0",
+  "updatedAt": "2017-12-08T20:29:21.247Z"
 }
