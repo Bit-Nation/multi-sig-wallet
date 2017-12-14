@@ -11,9 +11,9 @@ contract Shareable {
 
     // struct for the status of a pending operation.
     struct PendingState {
-    uint256 yetNeeded;
-    uint256 ownersDone;
-    uint256 index;
+        uint256 yetNeeded;
+        uint256 ownersDone;
+        uint256 index;
     }
 
     // the number of owners that must confirm the same operation before it is run.

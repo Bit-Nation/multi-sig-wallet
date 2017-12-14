@@ -20,5 +20,8 @@
   "devDependencies": {
     "electron": "^1.7.9",
     "electron-reload": "^1.2.2"
+  },
+  "dependencies": {
+    "web3": "^1.0.0-beta.26"
   }
 }
