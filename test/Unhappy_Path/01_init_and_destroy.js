@@ -1,6 +1,6 @@
 let MultiSigWallet = artifacts.require('./MultiSigWallet.sol');
 
-contract('MultiSig Wallet Init and destroy testing', accounts => {
+contract('MultiSig Wallet Init and destroy failure testing', accounts => {
 
 	let multisigWallet = {};
 
@@ -17,7 +17,7 @@ contract('MultiSig Wallet Init and destroy testing', accounts => {
 			})
 	});
 
-	it('Should be able to receive ether after death', function() {
+	it('Should not be able to destroy with just one confirmation', function() {
 		let ownerBalance = web3.eth.getBalance(accounts[0]);
 		let walletBalance = web3.eth.getBalance(multisigWallet.address);
 		let hash = 1234;
@@ -28,18 +28,12 @@ contract('MultiSig Wallet Init and destroy testing', accounts => {
 				assert.equal(txReceipt.logs.length, 1, "There should have been 1 event emitted");
 				assert.equal(txReceipt.logs[0].event, "Confirmation", "The first event should have been Confirmation");
 
-				return multisigWallet.destroy(accounts[0], {from: accounts[1], data: hash});
-			}).then(function(txReceipt) {
-
-				assert.equal(txReceipt.logs.length, 1, "There should have been 1 event emitted");
-				assert.equal(txReceipt.logs[0].event, "Confirmation", "The first event should have been Confirmation");
-
-				let newOwnerBalance = web3.eth.getBalance(accounts[0]);
-				let newWalletBalance = web3.eth.getBalance(multisigWallet.address);
-
-				assert.isTrue(newOwnerBalance > ownerBalance);
-				assert.isTrue(newWalletBalance < walletBalance);
+				return multisigWallet.destroy(accounts[0], {from: accounts[3], data: hash});
 			})
-	});
+			.then(assert.fail)
+			.catch(function(error) {
+				assert(error.message.indexOf('revert') >= 0, "error should be revert");
+			})
+	})
 
 });

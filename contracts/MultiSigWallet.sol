@@ -15,9 +15,9 @@ import "./DayLimit.sol";
 contract MultisigWallet is Multisig, Shareable, DayLimit {
 
     struct Transaction {
-    address to;
-    uint256 value;
-    bytes data;
+        address to;
+        uint256 value;
+        bytes data;
     }
 
     /**
@@ -26,8 +26,8 @@ contract MultisigWallet is Multisig, Shareable, DayLimit {
      * @param _required The amount required for a transaction to be approved.
      */
     function MultisigWallet(address[] _owners, uint256 _required, uint256 _daylimit)
-    Shareable(_owners, _required)
-    DayLimit(_daylimit) { }
+        Shareable(_owners, _required)
+        DayLimit(_daylimit) { }
 
     /**
      * @dev destroys the contract sending everything to `_to`.

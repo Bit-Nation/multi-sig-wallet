@@ -1,6 +1,6 @@
 let MultiSigWallet = artifacts.require('./MultiSigWallet.sol');
 
-contract('MultiSig Wallet request and confirm fund withdrawal tests', accounts => {
+contract('MultiSig Wallet request and confirm without sufficient approvals', accounts => {
 
 	let multisigWallet = {};
 	let dailyLim = 10;
@@ -14,7 +14,7 @@ contract('MultiSig Wallet request and confirm fund withdrawal tests', accounts =
 			})
 	});
 
-	it('should execute transaction if enough owners approve', function() {
+	it('should fail to execute if non-owners try to confirm', function() {
 		let accountBalance = web3.eth.getBalance(accounts[2]);
 		let newAccountBalance;
 		let hash = 1234;
@@ -35,17 +35,11 @@ contract('MultiSig Wallet request and confirm fund withdrawal tests', accounts =
 				let operation = txReceipt.logs[1].args.operation;
 
 				// Confirm the operation from account[1]
-				return multisigWallet.confirm(operation, {from: accounts[1]});
-			}).then(function(txReceipt) {
-
-				assert.equal(txReceipt.logs.length, 2, "There should have been two events emitted");
-				assert.equal(txReceipt.logs[0].event, "Confirmation", "First event should have been Confirmation");
-				assert.equal(txReceipt.logs[1].event, "MultiTransact", "Second event should have been MultiTransact");
-
-				newAccountBalance = web3.eth.getBalance(accounts[2]);
-				// console.log(accountBalance.toString());
-				// console.log(newAccountBalance.toString());
-				assert.isTrue(accountBalance.toString() < newAccountBalance.toString(), "Account 2 should be 20 wei richer")
+				return multisigWallet.confirm(operation, {from: accounts[3]});
+			})
+			.then(assert.fail)
+			.catch(function(error) {
+				assert(error.message.indexOf('revert') >= 0, "error should be revert");
 			})
 	})
 

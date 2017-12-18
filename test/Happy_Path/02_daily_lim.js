@@ -10,7 +10,7 @@ contract('MultiSig Wallet daily limit test', accounts => {
 		return MultiSigWallet.new([accounts[0], accounts[1], accounts[2]], numConfirms, dailyLim)
 			.then(function(instance) {
 				multiSigWallet = instance;
-				return web3.eth.sendTransaction({from: accounts[0], to: multiSigWallet.address, value: web3.toWei('10', 'ether')});
+				return web3.eth.sendTransaction({from: accounts[0], to: multiSigWallet.address, value: web3.toWei('1', 'ether')});
 			})
 	});
 
@@ -22,6 +22,10 @@ contract('MultiSig Wallet daily limit test', accounts => {
 		// account[0] tells wallet to withdraw 9 wei to account[2]
 		return multiSigWallet.execute(accounts[2], 9, hash)
 			.then(function(txReceipt) {
+
+				assert.equal(txReceipt.logs.length, 1, "There should have been one event emitted");
+				assert.equal(txReceipt.logs[0].event, "SingleTransact", "First event should have been SingleTransact");
+
 				newAccountBalance = web3.eth.getBalance(accounts[2]);
 				assert.isTrue(newAccountBalance.greaterThan(accountBalance));
 			})
