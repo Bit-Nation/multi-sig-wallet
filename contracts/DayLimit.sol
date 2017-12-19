@@ -11,6 +11,9 @@ contract DayLimit {
     uint256 public spentToday;
     uint256 public lastDay;
 
+    event DailyLimitSet(uint newDailyLim);
+    event ResetSpentToday();
+
     /**
      * @dev Constructor that sets the passed value as a dailyLimit.
      * @param _limit uint256 to represent the daily limit.
@@ -26,6 +29,7 @@ contract DayLimit {
      */
     function _setDailyLimit(uint256 _newLimit) internal {
         dailyLimit = _newLimit;
+        DailyLimitSet(dailyLimit);
     }
 
     /**
@@ -33,6 +37,7 @@ contract DayLimit {
      */
     function _resetSpentToday() internal {
         spentToday = 0;
+        ResetSpentToday();
     }
 
     /**
