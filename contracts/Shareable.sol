@@ -65,7 +65,7 @@ contract Shareable {
             ownerIndex[_owners[i]] = 2 + i;
         }
         required = _required;
-        require(required <= owners.length);
+        require(required < owners.length);
     }
 
     /**
