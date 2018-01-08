@@ -1,122 +1,125 @@
-pragma solidity 0.4.18;
+pragma solidity ^0.4.11;
 
-contract MultiSigWallet {
 
-    // Events
-    event Confirmation(address indexed sender, uint indexed transactionId);
-    event Revocation(address indexed sender, uint indexed transactionId);
-    event Submission(uint indexed transactionId);
-    event Execution(uint indexed transactionId);
-    event ExecutionFailure(uint indexed transactionId);
-    event Deposit(address indexed sender, uint value);
-    event OwnerAddition(address indexed owner);
-    event OwnerRemoval(address indexed owner);
-    event RequirementChange(uint required);
+import "./Multisig.sol";
+import "./Shareable.sol";
+import "./DayLimit.sol";
 
-    // Storage
 
-    mapping (uint => Transaction) public transactions;
-    mapping (uint => mapping (address => bool)) public confirmations;
-    mapping (address => bool) public isOwner;
-    address[] public owners;
-    uint public required;
-    uint public transactionCount;
+/**
+ * MultisigWallet
+ * Usage:
+ *     bytes32 h = Wallet(w).from(oneOwner).execute(to, value, data);
+ *     Wallet(w).from(anotherOwner).confirm(h);
+ */
+contract MultisigWallet is Multisig, Shareable, DayLimit {
 
     struct Transaction {
-        address destination;
-        uint value;
+        address to;
+        uint256 value;
         bytes data;
-        bool executed;
     }
 
-    // Modifiers
-    modifier ownerDoesNotExist(address owner) {
-        require(isOwner[owner]);
-        _;
-    }
-    modifier ownerExists(address owner) {
-        require(isOwner[owner]);
-        _;
-    }
-    modifier transactionExists(uint transactionId) {
-        require(transactions[transactionId].destination != 0);
-        _;
-    }
-    modifier confirmed(uint transactionId, address owner) {
-        require(confirmations[transactionId][owner]);
-        _;
-    }
-    modifier notConfirmed(uint transactionId, address owner) {
-        require(!confirmations[transactionId][owner]);
-        _;
-    }
-    modifier notExecuted(uint transactionId) {
-        require(!transactions[transactionId].executed);
-        _;
-    }
-    modifier notNull(address _address) {
-        require(_address != 0);
-        _;
+    /**
+     * Constructor, sets the owners addresses, number of approvals required, and daily spending limit
+     * @param _owners A list of owners.
+     * @param _required The amount required for a transaction to be approved.
+     */
+    function MultisigWallet(address[] _owners, uint256 _required, uint256 _daylimit)
+        Shareable(_owners, _required)
+        DayLimit(_daylimit) { }
+
+    /**
+     * @dev destroys the contract sending everything to `_to`.
+     */
+    function destroy(address _to) onlymanyowners(keccak256(msg.data)) external {
+        selfdestruct(_to);
     }
 
-    // Fallback function allows to deposit ether
-    function () payable {
+    /**
+     * @dev Fallback function, receives value and emits a deposit event.
+     */
+    function() payable {
+        // just being sent some cash?
         if (msg.value > 0)
-            Deposit(msg.sender, msg.value);
+        Deposit(msg.sender, msg.value);
     }
 
-    // Constructor
-    function MultiSigWallet(address[] _owners, uint _required) public {
-        require(_owners.length >= _required && _required != 0 && _owners.length != 0);
-        for (uint i=0; i<_owners.length; i++) {
-            require(!isOwner[_owners[i]] && _owners[i] != 0);
-            isOwner[_owners[i]] = true;
+    /**
+     * @dev Outside-visible transaction entry point. Executes transaction immediately if below daily
+     * spending limit. If not, goes into multisig process. We provide a hash on return to allow the
+     * sender to provide shortcuts for the other confirmations (allowing them to avoid replicating
+     * the _to, _value, and _data arguments). They still get the option of using them if they want,
+     * anyways.
+     * @param _to The receiver address
+     * @param _value The value to send
+     * @param _data The data part of the transaction
+     */
+    function execute(address _to, uint256 _value, bytes _data) external onlyOwner returns (bytes32 _r) {
+        // first, take the opportunity to check that we're under the daily limit.
+        if (underLimit(_value)) {
+            SingleTransact(msg.sender, _value, _to, _data);
+            // yes - just execute the call.
+            if (!_to.call.value(_value)(_data)) {
+                revert();
+            }
+            return 0;
         }
-        owners = _owners;
-        required = _required;
+        // determine our operation hash.
+        _r = keccak256(msg.data, block.number);
+        if (!confirm(_r) && txs[_r].to == 0) {
+            txs[_r].to = _to;
+            txs[_r].value = _value;
+            txs[_r].data = _data;
+            ConfirmationNeeded(_r, msg.sender, _value, _to, _data);
+        }
     }
 
-    // Public functions
-
-    function addOwner(address owner) public notNull(owner) ownerDoesNotExist(owner) {
-
+    /**
+     * @dev Confirm a transaction by providing just the hash. We use the previous transactions map,
+     * txs, in order to determine the body of the transaction from the hash provided.
+     * @param _h The transaction hash to approve.
+     */
+    function confirm(bytes32 _h) onlymanyowners(_h) returns (bool) {
+        if (txs[_h].to != 0) {
+            assert(txs[_h].to.call.value(txs[_h].value)(txs[_h].data));
+            MultiTransact(msg.sender, _h, txs[_h].value, txs[_h].to, txs[_h].data);
+            delete txs[_h];
+            return true;
+        }
     }
 
-    function removeOwner(address owner) public {
-
+    /**
+     * @dev Updates the daily limit value.
+     * @param _newLimit  uint256 to represent the new limit.
+     */
+    function setDailyLimit(uint256 _newLimit) onlymanyowners(keccak256(msg.data)) external {
+        _setDailyLimit(_newLimit);
     }
 
-    function changeRequirement(uint _required) public {
-
+    /**
+     * @dev Resets the value spent to enable more spending
+     */
+    function resetSpentToday() onlymanyowners(keccak256(msg.data)) external {
+        _resetSpentToday();
     }
 
-    function submitTransaction(address destination, uint value) public returns (uint transactionId) {
 
+    // INTERNAL METHODS
+    /**
+     * @dev Clears the list of transactions pending approval.
+     */
+    function clearPending() internal {
+        uint256 length = pendingsIndex.length;
+        for (uint256 i = 0; i < length; ++i) {
+            delete txs[pendingsIndex[i]];
+        }
+        super.clearPending();
     }
 
-    function confirmTransaction(uint transactionId) public {
 
-    }
+    // FIELDS
 
-    function revokeConfirmation(uint transactionId) public {
-
-    }
-
-    function executeTransaction(uint transactionId) public {
-
-    }
-
-    // Internal functions
-    function addTransaction(address destination, uint value, bytes data) internal notNull(destination) returns (uint transactionId) {
-        transactionId = transactionCount;
-        transactions[transactionId] = Transaction({
-            destination: destination,
-            value: value,
-            data: data,
-            executed: false
-        });
-        transactionCount += 1;
-        Submission(transactionId);
-    }
-
+    // pending transactions we have at present.
+    mapping (bytes32 => Transaction) txs;
 }
