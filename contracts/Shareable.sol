@@ -58,8 +58,6 @@ contract Shareable {
      * @param _required The amount required for a transaction to be approved.
      */
     function Shareable(address[] _owners, uint256 _required) {
-        owners[1] = msg.sender;
-        ownerIndex[msg.sender] = 1;
         for (uint256 i = 0; i < _owners.length; ++i) {
             owners[2 + i] = _owners[i];
             ownerIndex[_owners[i]] = 2 + i;
